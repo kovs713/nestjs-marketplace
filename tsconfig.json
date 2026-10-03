@@ -21,6 +21,30 @@
     "types": [
       "vitest/globals",
       "node"
-    ]
-  }
+    ],
+    "paths": {
+      "@app/api-gateway/*": [
+        "./apps/api-gateway/src/*"
+      ],
+      "@app/catalog-service/*": [
+        "./apps/catalog-service/src/*"
+      ],
+      "@app/inventory-service/*": [
+        "./apps/inventory-service/src/*"
+      ],
+      "@app/notification-service/*": [
+        "./apps/notification-service/src/*"
+      ],
+      "@app/order-service/*": [
+        "./apps/order-service/src/*"
+      ],
+      "@app/payment-service/*": [
+        "./apps/payment-service/src/*"
+      ]
+    }
+  },
+  "include": [
+    "apps/*/src/**/*",
+    "apps/*/test/**/*"
+  ]
 }
