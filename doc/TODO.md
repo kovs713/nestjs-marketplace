@@ -77,3 +77,7 @@ Inventory Service, and sets the order status to
 - WebSocket (e.g., Socket.io) implemented directly in the Notification Service for real-time client updates.
 - Redis for Catalog caching and optional WebSocket adapter/pub-sub.
 - Kubernetes for deploying all microservices, databases, and message brokers.
+
+Prototype schema:
+
+![prototype](schema.png)
