@@ -17,7 +17,7 @@
           nodejs
           bun
 
-          typescript-language-server
+          typescript
           nest-cli
           oxlint
           oxfmt
