@@ -40,11 +40,21 @@
       ],
       "@app/payment-service/*": [
         "./apps/payment-service/src/*"
+      ],
+      "@app/common": [
+        "./libs/common/src/index.ts"
+      ],
+      "@app/common/*": [
+        "./libs/common/src/*"
+      ],
+      "@app/contracts/*": [
+        "./libs/contracts/src/*"
       ]
     }
   },
   "include": [
     "apps/*/src/**/*",
-    "apps/*/test/**/*"
+    "apps/*/test/**/*",
+    "libs/*/src/**/*"
   ]
 }

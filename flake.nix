@@ -19,8 +19,10 @@
 
           typescript
           nest-cli
+          protols
           oxlint
           oxfmt
+          buf
         ];
 
         shellHook = ''
