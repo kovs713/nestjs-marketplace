@@ -2,9 +2,10 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
-import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import { ApiGatewayModule } from './../src/api-gateway.module.js';
+
+process.env.PORT = String(3111);
 
 describe('ApiGatewayController (e2e)', () => {
   let app: INestApplication<App>;
@@ -18,11 +19,11 @@ describe('ApiGatewayController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/health/live (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health/live')
       .expect(200)
-      .expect('Hello World!');
+      .expect('OK');
   });
 
   afterEach(async () => {

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package notification.v1;
+
+import "common/v1/common.proto";
+
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_ORDER_STATUS = 1;
+  NOTIFICATION_TYPE_PAYMENT = 2;
+  NOTIFICATION_TYPE_STOCK = 3;
+}
+
+message Notification {
+  string id = 1;
+  string user_id = 2;
+  string order_id = 3;
+  NotificationType type = 4;
+  string title = 5;
+  string body = 6;
+  string payload_json = 7;
+  // NULL = unread (not bool: read time is needed for sorting).
+  common.v1.Timestamp read_at = 8;
+  common.v1.Timestamp created_at = 9;
+}

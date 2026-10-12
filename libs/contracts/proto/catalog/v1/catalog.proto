@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+import "common/v1/common.proto";
+
+service CatalogService {
+  rpc CreateProduct (CreateProductRequest) returns (Product);
+  // Public lookup. Soft-deleted products return NOT_FOUND.
+  rpc GetProduct (GetProductRequest) returns (Product);
+  // Owner identity comes from trusted x-user-id metadata, not request fields.
+  rpc GetOwnProduct (GetProductRequest) returns (Product);
+  rpc ListProducts (ListProductsRequest) returns (ProductList);
+  rpc UpdateProduct (UpdateProductRequest) returns (Product);
+  rpc DeleteProduct (DeleteProductRequest) returns (Product);
+
+  rpc GetCategory (GetCategoryRequest) returns (Category);
+  rpc ListCategories (ListCategoriesRequest) returns (CategoryList);
+
+  rpc Search (SearchRequest) returns (ProductList);
+}
+
+message Product {
+  string id = 1;
+  string seller_id = 2;
+  string title = 3;
+  string description = 4;
+  int64 price_minor = 5;
+  string image_url = 6;
+  repeated string category_ids = 7;
+  StockProjection stock = 8;
+  common.v1.Timestamp created_at = 9;
+  common.v1.Timestamp updated_at = 10;
+  common.v1.Timestamp deleted_at = 11;
+}
+
+message StockProjection {
+  int32 in_stock = 1;
+  int32 in_reserved = 2;
+  common.v1.Timestamp synced_at = 3;
+}
+
+message Category {
+  string id = 1;
+  string parent_id = 2;
+  string slug = 3;
+  string title = 4;
+  common.v1.Timestamp created_at = 5;
+}
+
+message ProductList {
+  repeated Product items = 1;
+  string next_cursor = 2;
+}
+
+message CategoryList {
+  repeated Category items = 1;
+  string next_cursor = 2;
+}
+
+message CreateProductRequest {
+  string title = 1;
+  string description = 2;
+  int64 price_minor = 3;
+  string image_url = 4;
+  repeated string category_ids = 5;
+  // Opening shelf count. Catalog does not own stock: it carries the number on
+  // product.created and inventory-service creates the row from it.
+  int32 initial_stock = 6;
+  // Client-supplied. A retry with the same key and original payload returns
+  // the product's current state instead of creating a second product.
+  string idempotency_key = 7;
+}
+
+message GetProductRequest {
+  string id = 1;
+}
+
+message ListProductsRequest {
+  common.v1.PageRequest page = 1;
+  string seller_id = 2;
+  string category_id = 3;
+}
+
+message UpdateProductRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string description = 3;
+  optional int64 price_minor = 4;
+  optional string image_url = 5;
+  repeated string category_ids = 6;
+  bool replace_category_ids = 7;
+}
+
+message DeleteProductRequest {
+  string id = 1;
+}
+
+message GetCategoryRequest {
+  string id = 1;
+}
+
+message ListCategoriesRequest {
+  common.v1.PageRequest page = 1;
+  string parent_id = 2;
+}
+
+message SearchRequest {
+  string query = 1;
+  string category_id = 2;
+  common.v1.PageRequest page = 3;
+}

@@ -31,6 +31,10 @@
 $ bun install
 ```
 
+Use Bun installs to apply `patches/kafkajs@2.2.4.patch`, which stops empty
+request queues from scheduling negative timers. Remove it when upgrading to
+a release that fixes this behavior; `request-queue.spec.ts` guards the fix.
+
 ## Compile and run the project
 
 ```bash
@@ -43,6 +47,26 @@ $ bun run start:dev
 # production mode
 $ bun run start:prod
 ```
+
+## Catalog categories
+
+Categories are global, system-managed taxonomy. HTTP and gRPC expose category
+reads only; sellers can assign existing categories to their products, not mutate
+the taxonomy. Former category mutation endpoints/RPCs are removed.
+
+Manage taxonomy through reviewed Catalog data migrations:
+
+1. From `apps/catalog-service`, run
+   `bunx drizzle-kit generate --custom --name=catalog-taxonomy`.
+2. Add explicit category UUIDs, titles, unique slugs and parent IDs to the generated
+   SQL. Keep IDs stable; insert parents before children. Review category removals:
+   child categories restrict deletion, while product assignments cascade.
+3. Apply with `DATABASE_URL=<catalog-database-url> bun run db:migrate:catalog`
+   from the repository root. Commit migration files; do not edit applied migrations.
+
+Deploy updated Catalog replicas as well as the Gateway; old Catalog instances
+still expose the removed mutation RPCs. Internal service authentication remains
+a separate deployment concern, especially for product ownership metadata.
 
 ## Run tests
 

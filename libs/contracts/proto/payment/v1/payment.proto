@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package payment.v1;
+
+import "common/v1/common.proto";
+
+service PaymentService {
+  rpc Create (CreateRequest) returns (Payment);
+  rpc Get (GetRequest) returns (Payment);
+  rpc GetByOrder (GetByOrderRequest) returns (Payment);
+  rpc List (ListRequest) returns (PaymentList);
+  // Committed lifecycle changes, not provider calls or transient failures.
+  rpc ListHistory (ListHistoryRequest) returns (HistoryList);
+
+  // Saga steps, called by orders-service only. Idempotent by idempotency_key.
+  // Refunding an already-refunded payment returns the stored answer.
+  rpc Capture (CaptureRequest) returns (Payment);
+  rpc Refund (RefundRequest) returns (Payment);
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_PENDING = 1;
+  PAYMENT_STATUS_SUCCEEDED = 2;
+  PAYMENT_STATUS_FAILED = 3;
+  PAYMENT_STATUS_REFUNDED = 4;
+}
+
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  PAYMENT_METHOD_CARD = 1;
+  PAYMENT_METHOD_SBP = 2;
+  PAYMENT_METHOD_WALLET = 3;
+}
+
+message Payment {
+  string id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  int64 amount_minor = 4;
+  PaymentMethod method = 5;
+  PaymentStatus status = 6;
+  string provider = 7;
+  string provider_ref = 8;
+  string failure_code = 9;
+  string failure_message = 10;
+  common.v1.Timestamp created_at = 11;
+  common.v1.Timestamp updated_at = 12;
+  string refund_provider_ref = 13;
+}
+
+message HistoryEntry {
+  string id = 1;
+  string payment_id = 2;
+  int32 sequence = 3;
+  PaymentStatus status = 4;
+  string provider_response_json = 5;
+  common.v1.Timestamp created_at = 6;
+}
+
+message PaymentList {
+  repeated Payment items = 1;
+  string next_cursor = 2;
+}
+
+message HistoryList {
+  repeated HistoryEntry items = 1;
+  string next_cursor = 2;
+}
+
+message CreateRequest {
+  string order_id = 1;
+  string user_id = 2;
+  int64 amount_minor = 3;
+  PaymentMethod method = 4;
+  string idempotency_key = 5;
+}
+
+message GetRequest {
+  string id = 1;
+}
+
+message GetByOrderRequest {
+  string order_id = 1;
+}
+
+message ListRequest {
+  common.v1.PageRequest page = 1;
+  string user_id = 2;
+  string order_id = 3;
+  repeated PaymentStatus statuses = 4;
+}
+
+message ListHistoryRequest {
+  string payment_id = 1;
+  // Cursor is a positive decimal sequence number, not a UUID/base64 cursor.
+  common.v1.PageRequest page = 2;
+}
+
+message CaptureRequest {
+  string order_id = 1;
+  string idempotency_key = 2;
+}
+
+message RefundRequest {
+  string order_id = 1;
+  string idempotency_key = 2;
+}

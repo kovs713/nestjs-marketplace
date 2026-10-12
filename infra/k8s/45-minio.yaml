@@ -1,0 +1,130 @@
+---
+apiVersion: v1
+kind: Secret
+metadata: { name: minio-credentials, namespace: marketplace }
+type: Opaque
+stringData:
+  root-user: minioadmin
+  root-password: minioadmin
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: minio-data, namespace: marketplace }
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources: { requests: { storage: 2Gi } }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: minio, namespace: marketplace }
+spec:
+  selector: { app: minio }
+  ports:
+    - { name: s3, port: 9000, targetPort: s3 }
+    - { name: console, port: 9001, targetPort: console }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: minio, namespace: marketplace }
+spec:
+  replicas: 1
+  # Recreate: two pods cannot mount the same RWO volume at once
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: minio } }
+  template:
+    metadata:
+      labels: { app: minio, component: object-storage }
+    spec:
+      securityContext:
+        # fsGroup: otherwise the PVC is root-owned while the pod runs as uid 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: minio
+          image: pgsty/silo:RELEASE.2026-10-15T00-00-00Z
+          args: ["server", "/data", "--console-address", ":9001"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                { secretKeyRef: { name: minio-credentials, key: root-user } }
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                {
+                  secretKeyRef: { name: minio-credentials, key: root-password },
+                }
+          ports:
+            - { name: s3, containerPort: 9000 }
+            - { name: console, containerPort: 9001 }
+          livenessProbe:
+            httpGet: { path: /minio/health/live, port: s3 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /minio/health/ready, port: s3 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: tmp, mountPath: /tmp }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: minio-data }
+        - name: tmp
+          emptyDir: {}
+
+---
+# Anonymous download: files lib writes objects with public-read ACL, so signed
+# URLs alone would 403.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-create-bucket
+  namespace: marketplace
+  labels: { app.kubernetes.io/component: minio-init }
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: { app: minio-create-bucket }
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: pgsty/silo:RELEASE.2026-10-15T00-00-00Z
+          command:
+            - sh
+            - -c
+            - |
+              mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" &&
+              mc mb --ignore-existing local/marketplace &&
+              mc anonymous set download local/marketplace
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                { secretKeyRef: { name: minio-credentials, key: root-user } }
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                {
+                  secretKeyRef: { name: minio-credentials, key: root-password },
+                }
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 128Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }

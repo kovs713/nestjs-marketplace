@@ -1,0 +1,189 @@
+# Run before deploying services: Drizzle schema + outbox/inbox tables.
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-catalog
+  namespace: marketplace
+  labels: { app.kubernetes.io/component: migrate }
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: { app.kubernetes.io/component: migrate }
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "infra/docker/migrate.sh"]
+          env:
+            - { name: SERVICE, value: catalog-service }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef: { name: app-secrets, key: database-url-catalog },
+                }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 256Mi }
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-inventory
+  namespace: marketplace
+  labels: { app.kubernetes.io/component: migrate }
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: { app.kubernetes.io/component: migrate }
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "infra/docker/migrate.sh"]
+          env:
+            - { name: SERVICE, value: inventory-service }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef:
+                    { name: app-secrets, key: database-url-inventory },
+                }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 256Mi }
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-orders
+  namespace: marketplace
+  labels: { app.kubernetes.io/component: migrate }
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: { app.kubernetes.io/component: migrate }
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "infra/docker/migrate.sh"]
+          env:
+            - { name: SERVICE, value: orders-service }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef: { name: app-secrets, key: database-url-orders },
+                }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 256Mi }
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-payments
+  namespace: marketplace
+  labels: { app.kubernetes.io/component: migrate }
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: { app.kubernetes.io/component: migrate }
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "infra/docker/migrate.sh"]
+          env:
+            - { name: SERVICE, value: payment-service }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef:
+                    { name: app-secrets, key: database-url-payments },
+                }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 256Mi }
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-users
+  namespace: marketplace
+  labels: { app.kubernetes.io/component: migrate }
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: { app.kubernetes.io/component: migrate }
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "infra/docker/migrate.sh"]
+          env:
+            - { name: SERVICE, value: users-service }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef: { name: app-secrets, key: database-url-users },
+                }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 256Mi }
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-notification
+  namespace: marketplace
+  labels: { app.kubernetes.io/component: migrate }
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: { app.kubernetes.io/component: migrate }
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "infra/docker/migrate.sh"]
+          env:
+            - { name: SERVICE, value: notification-service }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef:
+                    { name: app-secrets, key: database-url-notification },
+                }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 256Mi }

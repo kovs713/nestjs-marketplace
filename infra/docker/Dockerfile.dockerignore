@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.direnv
+coverage
+*.log
+doc
+
+**/.env
+.env
+.env.*

@@ -17,7 +17,9 @@
           nodejs
           bun
 
+          pgformatter
           typescript
+          sqlfluff
           nest-cli
           protols
           oxlint

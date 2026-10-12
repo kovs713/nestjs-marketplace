@@ -46,6 +46,15 @@
         "tsConfigPath": "libs/contracts/tsconfig.lib.json"
       }
     },
+    "files": {
+      "type": "library",
+      "root": "libs/files",
+      "entryFile": "index",
+      "sourceRoot": "libs/files/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/files/tsconfig.lib.json"
+      }
+    },
     "inventory-service": {
       "type": "application",
       "root": "apps/inventory-service",
@@ -53,6 +62,24 @@
       "sourceRoot": "apps/inventory-service/src",
       "compilerOptions": {
         "tsConfigPath": "apps/inventory-service/tsconfig.app.json"
+      }
+    },
+    "jwt": {
+      "type": "library",
+      "root": "libs/jwt",
+      "entryFile": "index",
+      "sourceRoot": "libs/jwt/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/jwt/tsconfig.lib.json"
+      }
+    },
+    "kafka": {
+      "type": "library",
+      "root": "libs/kafka",
+      "entryFile": "index",
+      "sourceRoot": "libs/kafka/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/kafka/tsconfig.lib.json"
       }
     },
     "notification-service": {
@@ -64,13 +91,13 @@
         "tsConfigPath": "apps/notification-service/tsconfig.app.json"
       }
     },
-    "order-service": {
+    "orders-service": {
       "type": "application",
-      "root": "apps/order-service",
+      "root": "apps/orders-service",
       "entryFile": "main",
-      "sourceRoot": "apps/order-service/src",
+      "sourceRoot": "apps/orders-service/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/order-service/tsconfig.app.json"
+        "tsConfigPath": "apps/orders-service/tsconfig.app.json"
       }
     },
     "payment-service": {
@@ -80,6 +107,24 @@
       "sourceRoot": "apps/payment-service/src",
       "compilerOptions": {
         "tsConfigPath": "apps/payment-service/tsconfig.app.json"
+      }
+    },
+    "redis": {
+      "type": "library",
+      "root": "libs/redis",
+      "entryFile": "index",
+      "sourceRoot": "libs/redis/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/redis/tsconfig.lib.json"
+      }
+    },
+    "users-service": {
+      "type": "application",
+      "root": "apps/users-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/users-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/users-service/tsconfig.app.json"
       }
     }
   }

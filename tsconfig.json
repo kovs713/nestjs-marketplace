@@ -29,32 +29,64 @@
       "@app/catalog-service/*": [
         "./apps/catalog-service/src/*"
       ],
-      "@app/inventory-service/*": [
-        "./apps/inventory-service/src/*"
-      ],
-      "@app/notification-service/*": [
-        "./apps/notification-service/src/*"
-      ],
-      "@app/order-service/*": [
-        "./apps/order-service/src/*"
-      ],
-      "@app/payment-service/*": [
-        "./apps/payment-service/src/*"
-      ],
       "@app/common": [
         "./libs/common/src/index.ts"
       ],
       "@app/common/*": [
         "./libs/common/src/*"
       ],
+      "@app/contracts": [
+        "./libs/contracts/src/index.ts"
+      ],
       "@app/contracts/*": [
         "./libs/contracts/src/*"
+      ],
+      "@app/files": [
+        "./libs/files/src/index.ts"
+      ],
+      "@app/files/*": [
+        "./libs/files/src/*"
+      ],
+      "@app/inventory-service/*": [
+        "./apps/inventory-service/src/*"
+      ],
+      "@app/jwt": [
+        "./libs/jwt/src/index.ts"
+      ],
+      "@app/jwt/*": [
+        "./libs/jwt/src/*"
+      ],
+      "@app/kafka": [
+        "./libs/kafka/src/index.ts"
+      ],
+      "@app/kafka/*": [
+        "./libs/kafka/src/*"
+      ],
+      "@app/notification-service/*": [
+        "./apps/notification-service/src/*"
+      ],
+      "@app/orders-service/*": [
+        "./apps/orders-service/src/*"
+      ],
+      "@app/payment-service/*": [
+        "./apps/payment-service/src/*"
+      ],
+      "@app/redis": [
+        "./libs/redis/src/index.ts"
+      ],
+      "@app/redis/*": [
+        "./libs/redis/src/*"
+      ],
+      "@app/users-service/*": [
+        "./apps/users-service/src/*"
       ]
     }
   },
   "include": [
     "apps/*/src/**/*",
     "apps/*/test/**/*",
-    "libs/*/src/**/*"
+    "apps/*/drizzle.config.ts",
+    "libs/*/src/**/*",
+    "test/**/*"
   ]
 }

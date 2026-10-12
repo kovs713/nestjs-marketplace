@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package inventory.v1;
+
+import "common/v1/common.proto";
+
+// Source of truth for stocks and reserves.
+service InventoryService {
+  rpc GetStock (GetStockRequest) returns (Stock);
+  rpc ListStocks (ListStocksRequest) returns (StockList);
+  rpc SetStock (SetStockRequest) returns (Stock);
+  rpc AdjustStock (AdjustStockRequest) returns (Stock);
+
+  // Saga steps, called by orders-service only. All three are idempotent by
+  // idempotency_key. Commit/Release return snapshots plus replayed, not ALREADY_FINAL.
+  // Release after Commit is a no-op; fresh Commit after Release/expiry is rejected.
+  rpc Reserve (ReserveRequest) returns (ReserveResponse);
+  rpc Commit (CommitRequest) returns (CommitResponse);
+  rpc Release (ReleaseRequest) returns (ReleaseResponse);
+}
+
+message Stock {
+  string product_id = 1;
+  int32 in_stock = 2; // physically on shelf
+  int32 in_reserved = 3; // promised to orders; free = in_stock - in_reserved
+  common.v1.Timestamp updated_at = 4;
+}
+
+message StockList {
+  repeated Stock items = 1;
+  string next_cursor = 2;
+}
+
+message GetStockRequest {
+  string product_id = 1;
+}
+
+message ListStocksRequest {
+  common.v1.PageRequest page = 1;
+  repeated string product_ids = 2;
+}
+
+// in_reserved is not accepted: only reserve/write-off moves it,
+// else in_reserved can exceed in_stock.
+message SetStockRequest {
+  string product_id = 1;
+  int32 in_stock = 2;
+}
+
+message AdjustStockRequest {
+  string product_id = 1;
+  // Positive adds, negative subtracts.
+  int32 delta = 2;
+}
+
+enum ReservationStatus {
+  RESERVATION_STATUS_UNSPECIFIED = 0;
+  RESERVATION_STATUS_ACTIVE = 1;
+  RESERVATION_STATUS_COMMITTED = 2;
+  RESERVATION_STATUS_RELEASED = 3;
+  RESERVATION_STATUS_EXPIRED = 4;
+}
+
+message Reservation {
+  string id = 1;
+  string order_id = 2;
+  string order_item_id = 3;
+  string product_id = 4;
+  int32 quantity = 5;
+  ReservationStatus status = 6;
+  common.v1.Timestamp expires_at = 7;
+  common.v1.Timestamp created_at = 8;
+  common.v1.Timestamp updated_at = 9;
+}
+
+message ReservationItem {
+  string order_item_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+message ReserveRequest {
+  string order_id = 1;
+  repeated ReservationItem items = 2;
+  string idempotency_key = 3;
+  common.v1.Timestamp expires_at = 4;
+}
+
+message ReserveResponse {
+  string order_id = 1;
+  repeated Reservation reservations = 2;
+  // True when an existing reservation answer is replayed.
+  bool replayed = 3;
+}
+
+message CommitRequest {
+  string order_id = 1;
+  repeated ReservationItem items = 2;
+  string idempotency_key = 3;
+}
+
+message CommitResponse {
+  string order_id = 1;
+  repeated Reservation reservations = 2;
+  // True for a stored-key snapshot or already-committed no-op; false for a new commit.
+  bool replayed = 3;
+}
+
+message ReleaseRequest {
+  string order_id = 1;
+  repeated ReservationItem items = 2;
+  string idempotency_key = 3;
+}
+
+message ReleaseResponse {
+  string order_id = 1;
+  repeated Reservation reservations = 2;
+  // True for a stored-key snapshot or when no active reservation changes.
+  // Committed/released/expired reservations stay final; no committed stock is restored.
+  bool replayed = 3;
+}
