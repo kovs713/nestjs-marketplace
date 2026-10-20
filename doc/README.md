@@ -1,5 +1,6 @@
 # system flows
 
+[Документация на русском](README.ru.md) ·
 [Project overview](../README.md) · [Editable diagrams](diagrams.excalidraw)
 
 Open `diagrams.excalidraw` in Excalidraw to edit the diagrams below and the
