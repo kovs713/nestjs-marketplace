@@ -1,0 +1,1 @@
+export const INVENTORY_CLIENT = Symbol('INVENTORY_CLIENT');

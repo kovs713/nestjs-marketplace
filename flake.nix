@@ -1,0 +1,35 @@
+{
+  description = "Nix flake of dev environment shell";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  };
+
+  outputs =
+    { self, nixpkgs }:
+    let
+      system = "x86_64-linux";
+      pkgs = import nixpkgs { inherit system; };
+    in
+    {
+      devShells.${system}.default = pkgs.mkShell {
+        packages = with pkgs; [
+          nodejs
+          bun
+
+          pgformatter
+          typescript
+          sqlfluff
+          nest-cli
+          protols
+          oxlint
+          oxfmt
+          buf
+        ];
+
+        shellHook = ''
+          echo "Nix dev-shell loaded"
+        '';
+      };
+    };
+}

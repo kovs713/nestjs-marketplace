@@ -1,0 +1,438 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: marketplace, namespace: marketplace }
+automountServiceAccountToken: false
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api-gateway, namespace: marketplace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: api-gateway } }
+  template:
+    metadata:
+      labels: { app: api-gateway }
+    spec:
+      serviceAccountName: marketplace
+      containers:
+        - name: app
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SERVICE, value: api-gateway }
+            - { name: PORT, value: "3000" }
+            - { name: USERS_GRPC_URL, value: "users-service:50051" }
+            - { name: CATALOG_GRPC_URL, value: "catalog-service:50051" }
+            - { name: INVENTORY_GRPC_URL, value: "inventory-service:50051" }
+            - { name: ORDERS_GRPC_URL, value: "orders-service:50051" }
+            - name: JWT_SECRET
+              valueFrom:
+                { secretKeyRef: { name: app-secrets, key: app-jwt-secret } }
+            - { name: JWT_ACCESS_TTL, value: "15m" }
+            - { name: JWT_REFRESH_TTL, value: "30d" }
+          ports: [{ name: http, containerPort: 3000 }]
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: api-gateway, namespace: marketplace }
+spec:
+  selector: { app: api-gateway }
+  ports:
+    - { name: http, port: 3000, targetPort: http }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: notification-service, namespace: marketplace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: notification-service } }
+  template:
+    metadata:
+      labels: { app: notification-service }
+    spec:
+      serviceAccountName: marketplace
+      # WebSocket connections need time to drain
+      terminationGracePeriodSeconds: 45
+      containers:
+        - name: app
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SERVICE, value: notification-service }
+            - { name: PORT, value: "3000" }
+            - { name: KAFKA_BROKERS, value: "kafka:9092" }
+            - { name: REDIS_URL, value: "redis://redis:6379" }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef:
+                    { name: app-secrets, key: database-url-notification },
+                }
+            - name: JWT_SECRET
+              valueFrom:
+                { secretKeyRef: { name: app-secrets, key: app-jwt-secret } }
+            - { name: JWT_ACCESS_TTL, value: "15m" }
+            - { name: JWT_REFRESH_TTL, value: "30d" }
+          ports: [{ name: http, containerPort: 3000 }]
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: notification-service, namespace: marketplace }
+spec:
+  selector: { app: notification-service }
+  ports:
+    - { name: http, port: 3000, targetPort: http }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: users-service, namespace: marketplace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: users-service } }
+  template:
+    metadata:
+      labels: { app: users-service }
+    spec:
+      serviceAccountName: marketplace
+      containers:
+        - name: app
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SERVICE, value: users-service }
+            - { name: PORT, value: "3000" }
+            - { name: GRPC_PORT, value: "50051" }
+            - name: DATABASE_URL
+              valueFrom:
+                { secretKeyRef: { name: app-secrets, key: database-url-users } }
+            - { name: JWT_ACCESS_TTL, value: "15m" }
+            - { name: JWT_REFRESH_TTL, value: "30d" }
+            - name: JWT_SECRET
+              valueFrom:
+                { secretKeyRef: { name: app-secrets, key: app-jwt-secret } }
+          ports:
+            - { name: http, containerPort: 3000 }
+            - { name: grpc, containerPort: 50051 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: users-service, namespace: marketplace }
+spec:
+  selector: { app: users-service }
+  ports: [{ name: grpc, port: 50051, targetPort: grpc }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: catalog-service, namespace: marketplace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: catalog-service } }
+  template:
+    metadata:
+      labels: { app: catalog-service }
+    spec:
+      serviceAccountName: marketplace
+      containers:
+        - name: app
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SERVICE, value: catalog-service }
+            - { name: PORT, value: "3000" }
+            - { name: GRPC_PORT, value: "50051" }
+            - { name: KAFKA_BROKERS, value: "kafka:9092" }
+            - { name: REDIS_URL, value: "redis://redis:6379" }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef: { name: app-secrets, key: database-url-catalog },
+                }
+          ports:
+            - { name: http, containerPort: 3000 }
+            - { name: grpc, containerPort: 50051 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: catalog-service, namespace: marketplace }
+spec:
+  selector: { app: catalog-service }
+  ports: [{ name: grpc, port: 50051, targetPort: grpc }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: inventory-service, namespace: marketplace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: inventory-service } }
+  template:
+    metadata:
+      labels: { app: inventory-service }
+    spec:
+      serviceAccountName: marketplace
+      containers:
+        - name: app
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SERVICE, value: inventory-service }
+            - { name: PORT, value: "3000" }
+            - { name: GRPC_PORT, value: "50051" }
+            - { name: KAFKA_BROKERS, value: "kafka:9092" }
+            - { name: REDIS_URL, value: "redis://redis:6379" }
+            - { name: CATALOG_GRPC_URL, value: "catalog-service:50051" }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef:
+                    { name: app-secrets, key: database-url-inventory },
+                }
+          ports:
+            - { name: http, containerPort: 3000 }
+            - { name: grpc, containerPort: 50051 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: inventory-service, namespace: marketplace }
+spec:
+  selector: { app: inventory-service }
+  ports: [{ name: grpc, port: 50051, targetPort: grpc }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: orders-service, namespace: marketplace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: orders-service } }
+  template:
+    metadata:
+      labels: { app: orders-service }
+    spec:
+      serviceAccountName: marketplace
+      # Saga steps write compensations on shutdown; do not cut them short
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: app
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SERVICE, value: orders-service }
+            - { name: PORT, value: "3000" }
+            - { name: GRPC_PORT, value: "50051" }
+            - { name: KAFKA_BROKERS, value: "kafka:9092" }
+            - { name: REDIS_URL, value: "redis://redis:6379" }
+            - { name: CATALOG_GRPC_URL, value: "catalog-service:50051" }
+            - { name: INVENTORY_GRPC_URL, value: "inventory-service:50051" }
+            - { name: PAYMENT_GRPC_URL, value: "payment-service:50051" }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef: { name: app-secrets, key: database-url-orders },
+                }
+          ports:
+            - { name: http, containerPort: 3000 }
+            - { name: grpc, containerPort: 50051 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: orders-service, namespace: marketplace }
+spec:
+  selector: { app: orders-service }
+  ports: [{ name: grpc, port: 50051, targetPort: grpc }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: payment-service, namespace: marketplace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: payment-service } }
+  template:
+    metadata:
+      labels: { app: payment-service }
+    spec:
+      serviceAccountName: marketplace
+      containers:
+        - name: app
+          image: marketplace:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SERVICE, value: payment-service }
+            - { name: PORT, value: "3000" }
+            - { name: GRPC_PORT, value: "50051" }
+            - { name: KAFKA_BROKERS, value: "kafka:9092" }
+            - name: DATABASE_URL
+              valueFrom:
+                {
+                  secretKeyRef: { name: app-secrets, key: database-url-payments },
+                }
+          ports:
+            - { name: http, containerPort: 3000 }
+            - { name: grpc, containerPort: 50051 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+
+---
+apiVersion: v1
+kind: Service
+metadata: { name: payment-service, namespace: marketplace }
+spec:
+  selector: { app: payment-service }
+  ports: [{ name: grpc, port: 50051, targetPort: grpc }]

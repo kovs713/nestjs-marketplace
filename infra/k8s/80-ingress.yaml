@@ -1,0 +1,52 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: marketplace
+  namespace: marketplace
+  annotations:
+    # WebSocket connections stay open; default 60s proxy timeout drops them
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '3600'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
+    # /api/(.*) and /ws/(.*) are regex paths
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+    # /api/x -> /x (gateway routes are unprefixed); /ws/socket.io/... ->
+    # /socket.io/... (socket.io default path, namespace /notifications)
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: marketplace.local
+      http:
+        paths:
+          - path: /api/(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-gateway
+                port: { number: 3000 }
+          - path: /ws/(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: notification-service
+                port: { number: 3000 }
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: marketplace-notification-http
+  namespace: marketplace
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: marketplace.local
+      http:
+        paths:
+          - path: /notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port: { number: 3000 }

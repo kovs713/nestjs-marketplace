@@ -1,0 +1,92 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "types": [
+      "vitest/globals",
+      "node"
+    ],
+    "paths": {
+      "@app/api-gateway/*": [
+        "./apps/api-gateway/src/*"
+      ],
+      "@app/catalog-service/*": [
+        "./apps/catalog-service/src/*"
+      ],
+      "@app/common": [
+        "./libs/common/src/index.ts"
+      ],
+      "@app/common/*": [
+        "./libs/common/src/*"
+      ],
+      "@app/contracts": [
+        "./libs/contracts/src/index.ts"
+      ],
+      "@app/contracts/*": [
+        "./libs/contracts/src/*"
+      ],
+      "@app/files": [
+        "./libs/files/src/index.ts"
+      ],
+      "@app/files/*": [
+        "./libs/files/src/*"
+      ],
+      "@app/inventory-service/*": [
+        "./apps/inventory-service/src/*"
+      ],
+      "@app/jwt": [
+        "./libs/jwt/src/index.ts"
+      ],
+      "@app/jwt/*": [
+        "./libs/jwt/src/*"
+      ],
+      "@app/kafka": [
+        "./libs/kafka/src/index.ts"
+      ],
+      "@app/kafka/*": [
+        "./libs/kafka/src/*"
+      ],
+      "@app/notification-service/*": [
+        "./apps/notification-service/src/*"
+      ],
+      "@app/orders-service/*": [
+        "./apps/orders-service/src/*"
+      ],
+      "@app/payment-service/*": [
+        "./apps/payment-service/src/*"
+      ],
+      "@app/redis": [
+        "./libs/redis/src/index.ts"
+      ],
+      "@app/redis/*": [
+        "./libs/redis/src/*"
+      ],
+      "@app/users-service/*": [
+        "./apps/users-service/src/*"
+      ]
+    }
+  },
+  "include": [
+    "apps/*/src/**/*",
+    "apps/*/test/**/*",
+    "apps/*/drizzle.config.ts",
+    "libs/*/src/**/*",
+    "test/**/*"
+  ]
+}

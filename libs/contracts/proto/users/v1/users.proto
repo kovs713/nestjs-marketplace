@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package users.v1;
+
+import "common/v1/common.proto";
+
+service UsersService {
+  rpc Register (RegisterRequest) returns (User);
+  rpc Login (LoginRequest) returns (TokenPair);
+  rpc Refresh (RefreshRequest) returns (TokenPair);
+  rpc Logout (LogoutRequest) returns (common.v1.Empty);
+  rpc GetMe (GetMeRequest) returns (User);
+  rpc Get (GetRequest) returns (User);
+  rpc List (ListRequest) returns (UserList);
+  rpc Update (UpdateRequest) returns (User);
+  rpc Delete (DeleteRequest) returns (User);
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_BUYER = 1;
+  ROLE_SELLER = 2;
+}
+
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_BLOCKED = 2;
+}
+
+message User {
+  string id = 1;
+  string login = 2;
+  string email = 3;
+  Role role = 4;
+  UserStatus status = 5;
+  common.v1.Timestamp created_at = 6;
+  common.v1.Timestamp updated_at = 7;
+  // NULL = not deleted (soft delete).
+  common.v1.Timestamp deleted_at = 8;
+}
+
+message TokenPair {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+}
+
+message RegisterRequest {
+  string login = 1;
+  string email = 2;
+  string password = 3;
+  Role role = 4;
+}
+
+message LoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message GetMeRequest {}
+
+message GetRequest {
+  string id = 1;
+}
+
+message ListRequest {
+  common.v1.PageRequest page = 1;
+  Role role = 2;
+  // Default: only non-deleted.
+  bool include_deleted = 3;
+}
+
+message UserList {
+  repeated User items = 1;
+  string next_cursor = 2;
+}
+
+message UpdateRequest {
+  string id = 1;
+  optional string email = 2;
+  optional string password = 3;
+}
+
+message DeleteRequest {
+  string id = 1;
+}
