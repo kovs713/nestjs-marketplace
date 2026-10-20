@@ -1,0 +1,3 @@
+doc/diagrams.excalidraw -diff
+bun.lock -diff
+flake.lock -diff
